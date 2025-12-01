@@ -7,33 +7,29 @@ const instructions = (await readFile(filename, "utf-8")).trim().split("\n");
 
 class Safe {
   #dial: number;
-  cnt: number;
+  part1: number;
+  part2: number;
 
   constructor(initial: number) {
     this.#dial = initial;
-    this.cnt = 0;
+    this.part1 = 0;
+    this.part2 = 0;
   }
 
-  turnLeft(amount: number) {
-    for (let i = 0; i < amount; ++i) {
-      this.#dial--;
-      if (this.#dial < 0) {
-        this.#dial += 100;
-      }
-      if (this.#dial === 0) {
-        this.cnt++;
-      }
-    }
-  }
+  turn(direction: "L" | "R", amount: number) {
+    const dir = direction === "L" ? -1 : 1;
 
-  turnRight(amount: number) {
     for (let i = 0; i < amount; ++i) {
-      this.#dial++;
+      this.#dial += dir;
       this.#dial %= 100;
 
-      if (this.#dial === 0) {
-        this.cnt++;
+      if (!this.#dial) {
+        this.part2++;
       }
+    }
+
+    if (!this.#dial) {
+      this.part1++;
     }
   }
 }
@@ -41,14 +37,11 @@ class Safe {
 const safe = new Safe(50);
 
 for (const instruction of instructions) {
-  const dir = instruction.substring(0, 1);
+  const direction = instruction.substring(0, 1) as "L" | "R";
   const amount = parseInt(instruction.substring(1));
 
-  if (dir === "L") {
-    safe.turnLeft(amount);
-  } else {
-    safe.turnRight(amount);
-  }
+  safe.turn(direction, amount);
 }
 
-console.log("counter:", safe.cnt);
+console.log("part 1:", safe.part1);
+console.log("part 2:", safe.part2);
