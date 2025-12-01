@@ -15,18 +15,25 @@ class Safe {
   }
 
   turnLeft(amount: number) {
-    this.#dial = (((this.#dial - amount) % 100) + 100) % 100;
-    this.#checkCounter();
+    for (let i = 0; i < amount; ++i) {
+      this.#dial--;
+      if (this.#dial < 0) {
+        this.#dial += 100;
+      }
+      if (this.#dial === 0) {
+        this.cnt++;
+      }
+    }
   }
 
   turnRight(amount: number) {
-    this.#dial = (this.#dial + amount) % 100;
-    this.#checkCounter();
-  }
+    for (let i = 0; i < amount; ++i) {
+      this.#dial++;
+      this.#dial %= 100;
 
-  #checkCounter() {
-    if (this.#dial === 0) {
-      this.cnt++;
+      if (this.#dial === 0) {
+        this.cnt++;
+      }
     }
   }
 }
@@ -44,4 +51,4 @@ for (const instruction of instructions) {
   }
 }
 
-console.log("part 1:", safe.cnt);
+console.log("counter:", safe.cnt);
