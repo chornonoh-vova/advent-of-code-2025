@@ -8,7 +8,9 @@ if (!filename) {
   exit(1);
 }
 
-const instructions = (await readFile(filename, "utf-8")).trim().split("\n");
+const input = (await readFile(filename, "utf-8")).trim();
+
+const instructions = input.split("\n");
 
 type Direction = "L" | "R";
 

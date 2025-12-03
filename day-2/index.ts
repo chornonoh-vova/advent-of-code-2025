@@ -8,9 +8,9 @@ if (!filename) {
   exit(1);
 }
 
-const input = (await readFile(filename, "utf-8")).trim().split(",");
+const input = (await readFile(filename, "utf-8")).trim();
 
-const ranges = input.map((r) => r.split("-").map(Number));
+const ranges = input.split(",").map((r) => r.split("-").map(Number));
 
 const invalid1: number[] = [];
 
