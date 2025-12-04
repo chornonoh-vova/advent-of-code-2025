@@ -26,6 +26,23 @@ const directions = [
   [1, 1],
 ];
 
+function isAccessible(grid: string[][], row: number, col: number) {
+  const n = grid.length;
+  const m = grid[0].length;
+
+  let adjRolls = 0;
+
+  for (const [dr, dc] of directions) {
+    const [r, c] = [row + dr, col + dc];
+
+    if (r >= 0 && r < n && c >= 0 && c < m && grid[r][c] === ROLL) {
+      adjRolls++;
+    }
+  }
+
+  return adjRolls < 4;
+}
+
 function countAccessibleRolls(grid: string[][]) {
   const n = grid.length;
   const m = grid[0].length;
@@ -38,17 +55,7 @@ function countAccessibleRolls(grid: string[][]) {
         continue;
       }
 
-      let adjRolls = 0;
-
-      for (const [dr, dc] of directions) {
-        const [r, c] = [row + dr, col + dc];
-
-        if (r >= 0 && r < n && c >= 0 && c < m && grid[r][c] === ROLL) {
-          adjRolls++;
-        }
-      }
-
-      if (adjRolls < 4) {
+      if (isAccessible(grid, row, col)) {
         accessible++;
       }
     }
@@ -74,17 +81,7 @@ function countRemovableRolls(grid: string[][]) {
           continue;
         }
 
-        let adjRolls = 0;
-
-        for (const [dr, dc] of directions) {
-          const [r, c] = [row + dr, col + dc];
-
-          if (r >= 0 && r < n && c >= 0 && c < m && grid[r][c] === ROLL) {
-            adjRolls++;
-          }
-        }
-
-        if (adjRolls < 4) {
+        if (isAccessible(grid, row, col)) {
           toRemove.add(`${row}-${col}`);
         }
       }
