@@ -1,8 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { argv, exit } from "node:process";
 
+import { MinPriorityQueue } from "@datastructures-js/priority-queue";
+
 const filename = argv[2];
 const iterations = parseInt(argv[3]);
+
 if (!filename) {
   console.error("filename expected");
   exit(1);
@@ -34,111 +37,98 @@ function parse(input: string): Position[] {
   });
 }
 
+function first<K, V>(map: Map<K, V>): V {
+  return map.values().next().value;
+}
+
 function solution(input: string, iterations: number) {
-  const boxes = parse(input).map((val) => ({ ...val, powered: false }));
+  const boxes = parse(input);
+
   const n = boxes.length;
 
-  const distances = Array.from({ length: n }, () => new Array(n).fill(0));
+  const minDistances = new MinPriorityQueue<{
+    boxes: [number, number];
+    distance: number;
+  }>((item) => item.distance);
 
   for (let i = 0; i < n; ++i) {
-    for (let j = 0; j < n; ++j) {
-      distances[i][j] = distance(boxes[i], boxes[j]);
+    for (let j = i + 1; j < n; ++j) {
+      minDistances.enqueue({
+        boxes: [i, j],
+        distance: distance(boxes[i], boxes[j]),
+      });
     }
   }
 
-  let networks: {
-    id: number;
-    positions: Set<number>;
-  }[] = [];
-
   let id = 0;
 
-  let min = Infinity;
-  let max = -Infinity;
-  let minI = -1;
-  let minJ = -1;
-  let lastPair: [number, number] = [-1, -1];
+  const powered = new Array(n).fill(false);
+
+  const networks = new Map<number, Set<number>>();
+  const boxToNetwork = new Map<number, number>();
+
+  let box1 = -1,
+    box2 = -1;
 
   while (
     iterations > 0 ||
-    networks.length > 1 ||
-    networks[0].positions.size !== boxes.length
+    networks.size > 1 ||
+    first(networks).size !== boxes.length
   ) {
-    for (let i = 0; i < n; ++i) {
-      for (let j = 0; j < n; ++j) {
-        if (!distances[i][j]) {
-          continue;
+    const min = minDistances.dequeue()!;
+    [box1, box2] = min.boxes;
+
+    if (powered[box1] && powered[box2]) {
+      const network1 = boxToNetwork.get(box1)!;
+      const network2 = boxToNetwork.get(box2)!;
+
+      if (network1 !== network2) {
+        for (const pos2 of networks.get(network2)!) {
+          networks.get(network1)!.add(pos2);
+          boxToNetwork.set(pos2, network1);
         }
-        if (distances[i][j] <= max) {
-          continue;
-        }
-        if (min > distances[i][j]) {
-          min = distances[i][j];
-          minI = i;
-          minJ = j;
-        }
+
+        networks.delete(network2);
       }
+    } else if (boxToNetwork.has(box1) || boxToNetwork.has(box2)) {
+      powered[box1] = true;
+      powered[box2] = true;
+
+      const networkId = (boxToNetwork.get(box1) ?? boxToNetwork.get(box2))!;
+
+      networks.get(networkId)!.add(box1);
+      networks.get(networkId)!.add(box2);
+
+      boxToNetwork.set(box1, networkId);
+      boxToNetwork.set(box2, networkId);
+    } else {
+      powered[box1] = true;
+      powered[box2] = true;
+
+      const networkId = id++;
+
+      networks.set(networkId, new Set([box1, box2]));
+
+      boxToNetwork.set(box1, networkId);
+      boxToNetwork.set(box2, networkId);
     }
-
-    lastPair = [minI, minJ];
-
-    let added = false;
-
-    if (!added && boxes[minI].powered && boxes[minJ].powered) {
-      const network1 = networks.find((network) => network.positions.has(minI))!;
-      const network2 = networks.find((network) => network.positions.has(minJ))!;
-
-      if (network1.id === network2.id) {
-        added = true;
-      } else {
-        for (const pos2 of network2.positions) {
-          network1.positions.add(pos2);
-        }
-
-        added = true;
-        networks = networks.filter((network) => network.id !== network2.id);
-      }
-    }
-
-    if (!added) {
-      for (const network of networks) {
-        if (network.positions.has(minI) || network.positions.has(minJ)) {
-          boxes[minI].powered = true;
-          network.positions.add(minI);
-          boxes[minJ].powered = true;
-          network.positions.add(minJ);
-          added = true;
-          break;
-        }
-      }
-    }
-
-    if (!added) {
-      boxes[minI].powered = true;
-      boxes[minJ].powered = true;
-      networks.push({ id: id++, positions: new Set([minI, minJ]) });
-    }
-
-    max = min;
-    min = Infinity;
-    minI = -1;
-    minJ = -1;
 
     iterations--;
 
     if (iterations === 0) {
-      networks.sort((a, b) => b.positions.size - a.positions.size);
+      const networksSnapshot = Array.from(networks.values());
+      networksSnapshot.sort((a, b) => b.size - a.size);
 
       let part1 = 1;
       for (let i = 0; i < 3; ++i) {
-        part1 *= networks[i].positions.size;
+        part1 *= networksSnapshot[i].size;
       }
 
       console.log("part 1", part1);
     }
   }
 
-  console.log("part 2", boxes[lastPair[0]].x * boxes[lastPair[1]].x);
+  console.log("part 2", boxes[box1].x * boxes[box2].x);
 }
 
 solution(input, iterations);
