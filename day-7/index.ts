@@ -41,15 +41,15 @@ function countBeamSplits({ grid, start }: Parsed) {
   for (let i = 1; i < grid.length; ++i) {
     const nextBeams: Position[] = [];
 
-    for (const beam of beams) {
-      const nextBeam = { row: beam.row + 1, col: beam.col };
+    for (const { row, col } of beams) {
+      const nextRow = row + 1;
 
-      if (grid[nextBeam.row][nextBeam.col] === SPLITTER) {
-        nextBeams.push({ row: nextBeam.row, col: nextBeam.col - 1 });
-        nextBeams.push({ row: nextBeam.row, col: nextBeam.col + 1 });
+      if (grid[row][col] === SPLITTER) {
+        nextBeams.push({ row: nextRow, col: col - 1 });
+        nextBeams.push({ row: nextRow, col: col + 1 });
         cnt++;
       } else {
-        nextBeams.push(nextBeam);
+        nextBeams.push({ row: nextRow, col });
       }
     }
 
